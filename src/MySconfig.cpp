@@ -1,7 +1,7 @@
 /* d-diot BT-Pcb-328P-firmware - MySensors Configuration */
 
-#define MY_SIGNING_SOFT
-#define MY_SIGNING_REQUEST_SIGNATURES
+//#define MY_SIGNING_SOFT
+//#define MY_SIGNING_REQUEST_SIGNATURES
 #ifdef MY_SIGNING_ATSHA204_PIN
 #define MY_SIGNING_ATSHA204
 #endif
@@ -25,5 +25,5 @@
 #define MY_DEFAULT_RX_LED_PIN 16
 // Timeout before starting loop without gateway connection
 #define MY_TRANSPORT_WAIT_READY_MS 10000
-//#define MY_SPLASH_SCREEN_DISABLED
+#define MY_SPLASH_SCREEN_DISABLED
 static const bool ack = false;

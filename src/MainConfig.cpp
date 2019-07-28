@@ -8,6 +8,7 @@ const int LOW_BATTERY_LED_BRIGHTNESS = -1;
 // Blink time (ms)
 #define LOW_BATTERY_BLINK_TIME 300
 #endif
+#define BATTERY_PERCENT_TOLERANCE 5
 // AAA batteries = 1, CR2032 = 2
 #define BATTERY_TYPE 1
 // AAA batteries chemistry: 0 = Autodetect, 1 = Custom V min and V max, 2 = NiMH (rechargeable), 3 = Alkaline (disposable)
@@ -38,6 +39,7 @@ const int EXT_POWER_LED_BRIGHTNESS = 255;
 #define MEAN_VCC_READS 5
 // Measured Vcc by multimeter divided by reported Vcc
 const float VccCorrection = 1.0 / 1.0;
+const float VccTol = 0.2;
 
 // Heartbeat
 #define ENABLE_HEARTBEAT
@@ -55,3 +57,12 @@ const int MOTION_LED_BRIGHTNESS = -1;
 
 // SI7021 temperature and humidity
 #define ENABLE_SI7021
+#ifdef ENABLE_SI7021
+const float TempTol = 0.3;
+const float HumTol = 0.3;
+#endif
+
+// Photoresistor
+#ifdef PHOTORES_PIN
+#define PHOTORES_TOLERANCE 2
+#endif

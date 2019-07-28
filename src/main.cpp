@@ -7,11 +7,12 @@
 // ******************************* NODE CONFIGURATION **********************************
 
 // Sampling interval configuration
-static const uint64_t UPDATE_INTERVAL = 600000;
+static const uint32_t UPDATE_INTERVAL = 30000;
 static const uint8_t FORCE_UPDATE_N_READS = 10;
 
 // Debug configuration
-#define MY_DEBUG
+//#define MY_DEBUG
+#define F_DEBUG
 
 //  Pin configuration
 #include <PinConfig.cpp>
@@ -65,10 +66,10 @@ static SI7021 sensor;
 MyMessage msgVccValue(CHILD_ID_VCC_VOLTAGE, V_VOLTAGE);
 #endif
 #ifdef CHILD_ID_EXT_POWER
-MyMessage msgExtPower(CHILD_ID_EXT_POWER, V_STATUS);
+MyMessage msgExtPower(CHILD_ID_EXT_POWER, V_TRIPPED);
 #endif
 #ifdef CHILD_ID_BOOSTER
-MyMessage msgBooster(CHILD_ID_BOOSTER, V_STATUS);
+MyMessage msgBooster(CHILD_ID_BOOSTER, V_TRIPPED);
 #endif
 #ifdef CHILD_ID_LIGHT_LEVEL
 MyMessage msgLightLevel(CHILD_ID_LIGHT_LEVEL, V_LIGHT_LEVEL);
@@ -127,14 +128,15 @@ uint8_t nNoUpdatesBattPercent = 0;
 
 // Motion led status variables
 #ifdef ENABLE_MOTION_LED
-bool motion_led_status = false;
-bool last_motion_led_status = false;
 int motion_led_brighteness_status;
 #endif
 
 // Power LED status variables
+bool trigger_pwr_led_update = false;
+#ifdef PWR_LED_PIN
 int pwr_led_brighteness_status;
 unsigned long low_batt_led_on_start_time = 0;
+#endif
 
 // SI7021
 #ifdef ENABLE_SI7021
@@ -188,7 +190,7 @@ void cr2032_wait()
 void update_Vcc_level()
 {
   vcc_voltage = read_vcc(MEAN_VCC_READS);
-  if (first_run || vcc_voltage != last_vcc_voltage || nNoUpdatesVccLevel == FORCE_UPDATE_N_READS)
+  if (first_run || vcc_voltage <= last_vcc_voltage - VccTol || vcc_voltage >= last_vcc_voltage + VccTol || nNoUpdatesVccLevel == FORCE_UPDATE_N_READS)
   {
     last_vcc_voltage = vcc_voltage;
     nNoUpdatesVccLevel = 0;
@@ -196,15 +198,15 @@ void update_Vcc_level()
     send(msgVccValue.set((float)vcc_voltage, 2), ack);
     cr2032_wait();
 #endif
+#ifdef F_DEBUG
+    Serial.print("Mean Vcc:");
+    Serial.println(vcc_voltage);
+#endif
   }
   else
   {
     nNoUpdatesVccLevel++;
   }
-#ifdef MY_DEBUG
-  Serial.print("Mean Vcc:");
-  Serial.println(vcc_voltage);
-#endif
 }
 
 // Light Level read and update
@@ -212,16 +214,23 @@ void update_Vcc_level()
 void update_light_level(int tol = 2, int reads = 10)
 {
   int value = map(analog_smooth(PHOTORES_PIN, reads), 0, 1023, 0, 100);
-#ifdef MY_DEBUG
-  Serial.print("Light Level: ");
-  Serial.println(value);
-#endif
   if (value > lastLightLevel + tol || value < lastLightLevel - tol || nNoUpdatesLightLevel == FORCE_UPDATE_N_READS)
   {
     nNoUpdatesLightLevel = 0;
     lastLightLevel = value;
     send(msgLightLevel.set(lastLightLevel), ack);
     cr2032_wait();
+#ifdef F_DEBUG
+    Serial.print("Light Level: ");
+    Serial.println(value);
+#endif
+// Trigger external power update if EXT_POWER_LED_BRIGHTNESS = -1 (auto)
+#ifdef PWR_LED_PIN
+    if (EXT_POWER_LED_BRIGHTNESS == -1)
+    {
+      trigger_pwr_led_update = true;
+    }
+#endif
   }
   else
   {
@@ -232,7 +241,7 @@ void update_light_level(int tol = 2, int reads = 10)
 
 // Front PIR read and update
 #ifdef CHILD_ID_FRONT_PIR
-void update_fornt_pir()
+void update_front_pir()
 {
   // Logic is reversed
   front_pir = digitalRead(FRONT_PIR_PIN) ? false : true;
@@ -242,15 +251,47 @@ void update_fornt_pir()
     nNoUpdatesFrontPir = 0;
     send(msgFrontPir.set(front_pir ? 1 : 0), ack);
     cr2032_wait();
-#ifdef MY_DEBUG
+#ifdef F_DEBUG
     Serial.print("Front PIR: ");
     Serial.println(front_pir);
+#endif
+#ifdef ENABLE_MOTION_LED
+    if (front_pir)
+    {
+      if (MOTION_LED_BRIGHTNESS >= 0 && MOTION_LED_BRIGHTNESS <= 255)
+      {
+        motion_led_brighteness_status = MOTION_LED_BRIGHTNESS;
+      }
+      else if (MOTION_LED_BRIGHTNESS == -1)
+      {
+#ifdef CHILD_ID_LIGHT_LEVEL
+        motion_led_brighteness_status = map(lastLightLevel, 0, 100, 50, 255);
+#endif
+#ifndef CHILD_ID_LIGHT_LEVEL
+        motion_led_brighteness_status = 255;
+#endif
+      }
+      else
+      {
+        motion_led_brighteness_status = 0;
+      }
+    }
+    else
+    {
+      motion_led_brighteness_status = 0;
+    }
+    analogWrite(MOTION_LED_PIN, motion_led_brighteness_status);
+#ifdef F_DEBUG
+    Serial.print("Motion LED brightness:");
+    Serial.println(motion_led_brighteness_status);
+#endif
 #endif
   }
   else
   {
     nNoUpdatesFrontPir++;
   }
+  // Motion LED
 }
 #endif
 
@@ -269,11 +310,11 @@ void presentation()
   cr2032_wait();
 #endif
 #ifdef CHILD_ID_EXT_POWER
-  present(CHILD_ID_EXT_POWER, S_BINARY, "External power", ack);
+  present(CHILD_ID_EXT_POWER, S_SPRINKLER, "External power", ack);
   cr2032_wait();
 #endif
 #ifdef CHILD_ID_BOOSTER
-  present(CHILD_ID_BOOSTER, S_BINARY, "Booster", ack);
+  present(CHILD_ID_BOOSTER, S_SPRINKLER, "Booster", ack);
   cr2032_wait();
 #endif
 #ifdef CHILD_ID_LIGHT_LEVEL
@@ -305,6 +346,8 @@ void setup()
 {
 #ifdef POWER_PIN
   pinMode(POWER_PIN, OUTPUT);
+  digitalWrite(POWER_PIN, HIGH);
+  wait(300);
 #endif
 #ifdef EXT_PWR_SENSE_PIN
   pinMode(EXT_PWR_SENSE_PIN, INPUT);
@@ -321,19 +364,17 @@ void setup()
   pinMode(PHOTORES_PIN, INPUT);
 #endif
 #ifdef FRONT_PIR_PIN
-  pinMode(FRONT_PIR_PIN, INPUT);
+  pinMode(FRONT_PIR_PIN, INPUT_PULLUP);
 #endif
 #ifdef MOTION_LED_PIN
   pinMode(MOTION_LED_PIN, OUTPUT);
   digitalWrite(MOTION_LED_PIN, LOW);
 #endif
-  initial_vcc_voltage = vcc.Read_Volts();
-#ifdef ENABLE_SI7021
-#ifdef POWER_PIN
-  digitalWrite(POWER_PIN, HIGH);
-  wait(300);
-#endif
-  sensor_status = sensor.begin();
+#ifdef AAA_BATT_CHEMISTRY
+  if (AAA_BATT_CHEMISTRY == 0)
+  {
+    initial_vcc_voltage = vcc.Read_Volts();
+  }
 #endif
 }
 
@@ -346,6 +387,11 @@ void loop()
 // Turn ON power PIN
 #ifdef POWER_PIN
   digitalWrite(POWER_PIN, HIGH);
+#endif
+
+#ifdef F_DEBUG
+  Serial.print("Wake up mode:");
+  Serial.println(wake_up_mode);
 #endif
 
 // Send heartbeat
@@ -380,70 +426,46 @@ void loop()
     send(msgBooster.set(boost_status ? 1 : 0), ack);
     cr2032_wait();
 #endif
+#ifdef F_DEBUG
+    Serial.print("Booster:");
+    Serial.println(boost_status);
+#endif
   }
   else
   {
     nNoUpdatesBooster++;
   }
-#ifdef MY_DEBUG
-  Serial.print("Booster:");
-  Serial.println(boost_status);
-#endif
 #endif
 
   // Read light value
-  update_light_level(0, 10);
+#ifdef CHILD_ID_LIGHT_LEVEL
+  update_light_level(PHOTORES_TOLERANCE, 10);
+#endif
 
   // Read Pir value
-  update_fornt_pir();
-
-// Motion LED
-#ifdef ENABLE_MOTION_LED
-  motion_led_status = front_pir;
-  if (first_run || motion_led_status != last_motion_led_status)
+#ifdef CHILD_ID_FRONT_PIR
+  update_front_pir();
+  while (digitalRead(FRONT_PIR_PIN) == LOW)
   {
-    last_motion_led_status = motion_led_status;
-    if (motion_led_status)
-    {
-      if (MOTION_LED_BRIGHTNESS >= 0 && MOTION_LED_BRIGHTNESS <= 255)
-      {
-        motion_led_brighteness_status = MOTION_LED_BRIGHTNESS;
-      }
-      else if (MOTION_LED_BRIGHTNESS == -1)
-      {
-#ifdef CHILD_ID_LIGHT_LEVEL
-        motion_led_brighteness_status = map(lastLightLevel, 0, 100, 50, 255);
-#endif
-#ifndef CHILD_ID_LIGHT_LEVEL
-        motion_led_brighteness_status = 255;
-#endif
-      }
-      else
-      {
-        motion_led_brighteness_status = 0;
-      }
-    }
-    else
-    {
-      motion_led_brighteness_status = 0;
-    }
-    analogWrite(MOTION_LED_PIN, motion_led_brighteness_status);
+    continue;
   }
-#ifdef MY_DEBUG
-  Serial.print("Motion LED status:");
-  Serial.println(motion_led_brighteness_status);
-#endif
+  update_front_pir();
 #endif
 
   // Detect external power presence. Logic is reversed: HIGH = no external power, LOW = external_power
   ext_power = digitalRead(EXT_PWR_SENSE_PIN) ? false : true;
-  if (first_run || ext_power != last_ext_power || nNoUpdatesExtPwr == FORCE_UPDATE_N_READS)
+  if (trigger_pwr_led_update || first_run || ext_power != last_ext_power || nNoUpdatesExtPwr == FORCE_UPDATE_N_READS)
   {
     last_ext_power = ext_power;
     nNoUpdatesExtPwr = 0;
+    trigger_pwr_led_update = false;
 #ifdef CHILD_ID_EXT_POWER
     send(msgExtPower.set(ext_power ? 1 : 0), ack);
     cr2032_wait();
+#endif
+#ifdef F_DEBUG
+    Serial.print("External Power:");
+    Serial.println(ext_power);
 #endif
 #ifdef PWR_LED_PIN
     if (ext_power)
@@ -471,7 +493,7 @@ void loop()
       pwr_led_brighteness_status = 0;
     }
     analogWrite(PWR_LED_PIN, pwr_led_brighteness_status);
-#ifdef MY_DEBUG
+#ifdef F_DEBUG
     Serial.print("Power LED status (ext power):");
     Serial.println(pwr_led_brighteness_status);
 #endif
@@ -481,10 +503,6 @@ void loop()
   {
     nNoUpdatesExtPwr++;
   }
-#ifdef MY_DEBUG
-  Serial.print("External Power:");
-  Serial.println(ext_power);
-#endif
 
 // Read battery level
 #ifdef ENABLE_BATTERY_MONITOR
@@ -541,21 +559,21 @@ void loop()
       batt_percent_value = 0;
     }
   }
-  if (first_run || batt_percent_value != last_batt_percent_value || nNoUpdatesBattPercent == FORCE_UPDATE_N_READS)
+  if (first_run || batt_percent_value <= last_batt_percent_value - BATTERY_PERCENT_TOLERANCE || batt_percent_value >= last_batt_percent_value + BATTERY_PERCENT_TOLERANCE || nNoUpdatesBattPercent == FORCE_UPDATE_N_READS)
   {
     nNoUpdatesBattPercent = 0;
     last_batt_percent_value = batt_percent_value;
     sendBatteryLevel(batt_percent_value);
     cr2032_wait();
+#ifdef F_DEBUG
+    Serial.print("Battery Percent:");
+    Serial.println(batt_percent_value);
+#endif
   }
   else
   {
     nNoUpdatesBattPercent++;
   }
-#ifdef MY_DEBUG
-  Serial.print("Battery Percent:");
-  Serial.println(batt_percent_value);
-#endif
 #endif
 
 // Low battery pwr LED blink
@@ -591,7 +609,7 @@ void loop()
     {
       low_batt_led_on_start_time = millis();
     }
-#ifdef MY_DEBUG
+#ifdef F_DEBUG
     Serial.print("Power LED status (low battery):");
     Serial.println(pwr_led_brighteness_status);
 #endif
@@ -600,44 +618,46 @@ void loop()
 
 // Read temp and hum
 #ifdef ENABLE_SI7021
+  sensor_status = sensor.begin();
+  wait(300);
   if (sensor_status)
   {
     temperature = float(metric ? sensor.getCelsiusHundredths() : sensor.getFahrenheitHundredths()) / 100.0;
     humidity = float(sensor.getHumidityBasisPoints()) / 100.0;
-    if (first_run || last_temp != temperature || nNoUpdatesTemp == FORCE_UPDATE_N_READS)
+    if (first_run || temperature <= last_temp - TempTol || temperature >= last_temp + TempTol || nNoUpdatesTemp == FORCE_UPDATE_N_READS)
     {
       last_temp = temperature;
       nNoUpdatesTemp = 0;
-      send(msgTemp.set(temperature, 2), ack);
+      send(msgTemp.set(temperature, 1), ack);
       cr2032_wait();
+#ifdef F_DEBUG
+      Serial.print("Temp:");
+      Serial.println(temperature);
+#endif
     }
     else
     {
       nNoUpdatesTemp++;
     }
-#ifdef MY_DEBUG
-    Serial.print("Temp:");
-    Serial.println(temperature);
-#endif
-    if (first_run || last_hum != humidity || nNoUpdatesHum == FORCE_UPDATE_N_READS)
+    if (first_run || humidity <= last_hum - HumTol || humidity >= last_hum + HumTol || nNoUpdatesHum == FORCE_UPDATE_N_READS)
     {
       last_hum = humidity;
       nNoUpdatesHum = 0;
-      send(msgHum.set(humidity, 2), ack);
+      send(msgHum.set(humidity, 1), ack);
       cr2032_wait();
+#ifdef F_DEBUG
+      Serial.print("Hum:");
+      Serial.println(humidity);
+#endif
     }
     else
     {
       nNoUpdatesHum++;
     }
-#ifdef MY_DEBUG
-    Serial.print("Hum:");
-    Serial.println(humidity);
-#endif
   }
   else
   {
-#ifdef MY_DEBUG
+#ifdef F_DEBUG
     Serial.print("SI7021 status:");
     Serial.println(sensor_status);
 #endif
@@ -660,6 +680,7 @@ void loop()
     low_batt_led_on_start_time = 0;
     analogWrite(PWR_LED_PIN, pwr_led_brighteness_status);
   }
+
   // Set first run to false
   if (first_run)
   {
@@ -667,6 +688,14 @@ void loop()
   }
 
   // Smartsleep
-  wake_up_mode = smartSleep(1, CHANGE, UPDATE_INTERVAL);
+#ifdef F_DEBUG
+  Serial.println("Sleeping");
+#endif
+#ifdef CHILD_ID_FRONT_PIR
+  wake_up_mode = smartSleep(digitalPinToInterrupt(FRONT_PIR_PIN), FALLING, UPDATE_INTERVAL);
+#endif
+#ifndef CHILD_ID_FRONT_PIR
+  wake_up_mode = smartSleep(UPDATE_INTERVAL);
+#endif
 }
 // **************************** END OF LOOP *********************************
