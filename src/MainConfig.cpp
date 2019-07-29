@@ -4,7 +4,7 @@
 // Brightness level: 0 - 255. Auto = -1. Any number different from: -1, 0 - 255 = LED OFF
 const int LOW_BATTERY_LED_BRIGHTNESS = -1;
 // Battery percentage threshold to activate the LED
-#define LOW_BATTERY_THRESHOLD 10
+#define LOW_BATTERY_THRESHOLD 15
 // Blink time (ms)
 #define LOW_BATTERY_BLINK_TIME 300
 #endif
@@ -13,7 +13,7 @@ const int LOW_BATTERY_LED_BRIGHTNESS = -1;
 #define BATTERY_TYPE 1
 // AAA batteries chemistry: 0 = Autodetect, 1 = Custom V min and V max, 2 = NiMH (rechargeable), 3 = Alkaline (disposable)
 #define AAA_BATT_CHEMISTRY 0
-const float CUSTOM_V_MIN = 1.0;
+const float CUSTOM_V_MIN = 1.8;
 const float CUSTOM_V_MAX = 3.3;
 // Milliseconds to wait after radio module activity (necessary only with CR2032 batteries)
 #define CR2032_RADIO_WAIT_TIME 400
@@ -39,7 +39,7 @@ const int EXT_POWER_LED_BRIGHTNESS = 255;
 #define MEAN_VCC_READS 5
 // Measured Vcc by multimeter divided by reported Vcc
 const float VccCorrection = 1.0 / 1.0;
-const float VccTol = 0.2;
+const float VccTol = 0.1;
 
 // Heartbeat
 #define ENABLE_HEARTBEAT
@@ -60,9 +60,18 @@ const int MOTION_LED_BRIGHTNESS = -1;
 #ifdef ENABLE_SI7021
 const float TempTol = 0.3;
 const float HumTol = 0.3;
+#define SI7021_WAIT_TIME 1000
 #endif
 
 // Photoresistor
 #ifdef PHOTORES_PIN
 #define PHOTORES_TOLERANCE 2
+#endif
+
+// Auto LED brightness
+#define MIN_LED_BRIGHTNESS 10
+
+// Wait time for power pin
+#ifdef POWER_PIN
+#define POWER_PIN_WAIT_TIME 300
 #endif

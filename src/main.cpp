@@ -265,7 +265,7 @@ void update_front_pir()
       else if (MOTION_LED_BRIGHTNESS == -1)
       {
 #ifdef CHILD_ID_LIGHT_LEVEL
-        motion_led_brighteness_status = map(lastLightLevel, 0, 100, 50, 255);
+        motion_led_brighteness_status = map(lastLightLevel, 0, 100, MIN_LED_BRIGHTNESS, 255);
 #endif
 #ifndef CHILD_ID_LIGHT_LEVEL
         motion_led_brighteness_status = 255;
@@ -387,6 +387,7 @@ void loop()
 // Turn ON power PIN
 #ifdef POWER_PIN
   digitalWrite(POWER_PIN, HIGH);
+  wait(POWER_PIN_WAIT_TIME);
 #endif
 
 #ifdef F_DEBUG
@@ -477,7 +478,7 @@ void loop()
       else if (EXT_POWER_LED_BRIGHTNESS == -1)
       {
 #ifdef CHILD_ID_LIGHT_LEVEL
-        pwr_led_brighteness_status = map(lastLightLevel, 0, 100, 50, 255);
+        pwr_led_brighteness_status = map(lastLightLevel, 0, 100, MIN_LED_BRIGHTNESS, 255);
 #endif
 #ifndef CHILD_ID_LIGHT_LEVEL
         pwr_led_brighteness_status = 255;
@@ -525,11 +526,11 @@ void loop()
       {
         if (initial_vcc_voltage > 2.5)
         {
-          batt_percent_value = (uint8_t)round(vcc.Read_Perc(1.2, 3.0));
+          batt_percent_value = (uint8_t)round(vcc.Read_Perc(1.8, 3.0));
         }
         else
         {
-          batt_percent_value = (uint8_t)round(vcc.Read_Perc(1.2, 2.4));
+          batt_percent_value = (uint8_t)round(vcc.Read_Perc(1.8, 2.4));
         }
       }
       // Custom V min and V max
@@ -540,12 +541,12 @@ void loop()
       // NiMH batteries (rechargeable)
       else if (AAA_BATT_CHEMISTRY == 2)
       {
-        batt_percent_value = (uint8_t)round(vcc.Read_Perc(1.2, 2.4));
+        batt_percent_value = (uint8_t)round(vcc.Read_Perc(1.8, 2.4));
       }
       // Alkaline batteries (disposable)
       else if (AAA_BATT_CHEMISTRY == 3)
       {
-        batt_percent_value = (uint8_t)round(vcc.Read_Perc(1.2, 3.0));
+        batt_percent_value = (uint8_t)round(vcc.Read_Perc(1.8, 3.0));
       }
       // Undefined battery chemistry
       else
@@ -589,7 +590,7 @@ void loop()
       else if (LOW_BATTERY_LED_BRIGHTNESS == -1)
       {
 #ifdef CHILD_ID_LIGHT_LEVEL
-        pwr_led_brighteness_status = map(lastLightLevel, 0, 100, 50, 255);
+        pwr_led_brighteness_status = map(lastLightLevel, 0, 100, MIN_LED_BRIGHTNESS, 255);
 #endif
 #ifndef CHILD_ID_LIGHT_LEVEL
         pwr_led_brighteness_status = 255;
@@ -619,7 +620,7 @@ void loop()
 // Read temp and hum
 #ifdef ENABLE_SI7021
   sensor_status = sensor.begin();
-  wait(300);
+  wait(SI7021_WAIT_TIME);
   if (sensor_status)
   {
     temperature = float(metric ? sensor.getCelsiusHundredths() : sensor.getFahrenheitHundredths()) / 100.0;
