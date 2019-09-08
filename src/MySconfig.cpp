@@ -1,5 +1,7 @@
 /* d-diot BT-Pcb-328P-firmware - MySensors Configuration */
 
+#define MY_BAUD_RATE (9600ul)
+
 //#define MY_SIGNING_SOFT
 //#define MY_SIGNING_REQUEST_SIGNATURES
 #ifdef MY_SIGNING_ATSHA204_PIN

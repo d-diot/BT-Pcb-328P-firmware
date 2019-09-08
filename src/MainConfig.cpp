@@ -1,5 +1,24 @@
+// Debug configuration
+//#define MY_DEBUG
+//#define F_DEBUG
+
 // Batteries configuration
 #define ENABLE_BATTERY_MONITOR
+#define BATTERY_PERCENT_TOLERANCE 5
+// AAA batteries = 1, CR2032 = 2
+#define BATTERY_TYPE 1
+// AAA batteries chemistry: 0 = Autodetect, 1 = Custom V min and V max, 2 = NiMH (rechargeable), 3 = Alkaline (disposable)
+#define AAA_BATT_CHEMISTRY 0
+const float NIMH_V_MIN = 2.0;
+const float NIMH_V_MAX = 2.4;
+const float ALK_V_MIN = 2.0;
+const float ALK_V_MAX = 3.0;
+const float CR2032_V_MIN = 2.4;
+const float CR2032_V_MAX = 3.0;
+const float CUSTOM_V_MIN = 1.8;
+const float CUSTOM_V_MAX = 3.3;
+// Milliseconds to wait after radio module activity (necessary only with CR2032 batteries)
+#define CR2032_RADIO_WAIT_TIME 400
 #ifdef PWR_LED_PIN
 // Brightness level: 0 - 255. Auto = -1. Any number different from: -1, 0 - 255 = LED OFF
 const int LOW_BATTERY_LED_BRIGHTNESS = -1;
@@ -8,15 +27,6 @@ const int LOW_BATTERY_LED_BRIGHTNESS = -1;
 // Blink time (ms)
 #define LOW_BATTERY_BLINK_TIME 300
 #endif
-#define BATTERY_PERCENT_TOLERANCE 5
-// AAA batteries = 1, CR2032 = 2
-#define BATTERY_TYPE 1
-// AAA batteries chemistry: 0 = Autodetect, 1 = Custom V min and V max, 2 = NiMH (rechargeable), 3 = Alkaline (disposable)
-#define AAA_BATT_CHEMISTRY 0
-const float CUSTOM_V_MIN = 1.8;
-const float CUSTOM_V_MAX = 3.3;
-// Milliseconds to wait after radio module activity (necessary only with CR2032 batteries)
-#define CR2032_RADIO_WAIT_TIME 400
 
 // Booster configuration
 #ifdef BOOSTER_PIN
@@ -31,7 +41,7 @@ const float BoostThreshold = 2.7;
 #define ENABLE_EXT_PWR_MONITOR
 #ifdef PWR_LED_PIN
 // Brightness level: 0 - 255. Auto = -1. Any number different from: -1 or 0 - 255 = LED OFF
-const int EXT_POWER_LED_BRIGHTNESS = 255;
+const int EXT_POWER_LED_BRIGHTNESS = -1;
 #endif
 
 // Vcc read configuration

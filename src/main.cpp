@@ -7,12 +7,8 @@
 // ******************************* NODE CONFIGURATION **********************************
 
 // Sampling interval configuration
-static const uint32_t UPDATE_INTERVAL = 30000;
+static const uint32_t UPDATE_INTERVAL = 300000;
 static const uint8_t FORCE_UPDATE_N_READS = 10;
-
-// Debug configuration
-//#define MY_DEBUG
-#define F_DEBUG
 
 //  Pin configuration
 #include <PinConfig.cpp>
@@ -446,11 +442,6 @@ void loop()
   // Read Pir value
 #ifdef CHILD_ID_FRONT_PIR
   update_front_pir();
-  while (digitalRead(FRONT_PIR_PIN) == LOW)
-  {
-    continue;
-  }
-  update_front_pir();
 #endif
 
   // Detect external power presence. Logic is reversed: HIGH = no external power, LOW = external_power
@@ -505,7 +496,8 @@ void loop()
     nNoUpdatesExtPwr++;
   }
 
-// Read battery level
+  // Read battery level
+
 #ifdef ENABLE_BATTERY_MONITOR
   if (ext_power)
   {
@@ -516,7 +508,7 @@ void loop()
     // CR2032: V min = 2.4, V max = 3.0
     if (BATTERY_TYPE == 2)
     {
-      batt_percent_value = (uint8_t)round(vcc.Read_Perc(2.4, 3.0));
+      batt_percent_value = (uint8_t)round(vcc.Read_Perc(CR2032_V_MIN, CR2032_V_MAX));
     }
     // AAA bateries
     else if (BATTERY_TYPE == 1)
@@ -526,11 +518,11 @@ void loop()
       {
         if (initial_vcc_voltage > 2.5)
         {
-          batt_percent_value = (uint8_t)round(vcc.Read_Perc(1.8, 3.0));
+          batt_percent_value = (uint8_t)round(vcc.Read_Perc(ALK_V_MIN, ALK_V_MAX));
         }
         else
         {
-          batt_percent_value = (uint8_t)round(vcc.Read_Perc(1.8, 2.4));
+          batt_percent_value = (uint8_t)round(vcc.Read_Perc(NIMH_V_MIN, NIMH_V_MAX));
         }
       }
       // Custom V min and V max
@@ -541,12 +533,12 @@ void loop()
       // NiMH batteries (rechargeable)
       else if (AAA_BATT_CHEMISTRY == 2)
       {
-        batt_percent_value = (uint8_t)round(vcc.Read_Perc(1.8, 2.4));
+        batt_percent_value = (uint8_t)round(vcc.Read_Perc(NIMH_V_MIN, NIMH_V_MAX));
       }
       // Alkaline batteries (disposable)
       else if (AAA_BATT_CHEMISTRY == 3)
       {
-        batt_percent_value = (uint8_t)round(vcc.Read_Perc(1.8, 3.0));
+        batt_percent_value = (uint8_t)round(vcc.Read_Perc(ALK_V_MIN, ALK_V_MAX));
       }
       // Undefined battery chemistry
       else
@@ -687,6 +679,14 @@ void loop()
   {
     first_run = false;
   }
+
+#ifdef CHILD_ID_FRONT_PIR
+  while (digitalRead(FRONT_PIR_PIN) == LOW)
+  {
+    continue;
+  }
+  update_front_pir();
+#endif
 
   // Smartsleep
 #ifdef F_DEBUG
