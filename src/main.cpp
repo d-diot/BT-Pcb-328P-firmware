@@ -6,9 +6,9 @@
 
 // ******************************* NODE CONFIGURATION **********************************
 
-// Sampling interval configuration
-static const uint32_t UPDATE_INTERVAL = 300000;
-static const uint8_t FORCE_UPDATE_N_READS = 10;
+// Sketch name and version
+const char sketch_name[] = "BT-Pcb-328P-firmware";
+const char sketch_version[] = "1.0";
 
 //  Pin configuration
 #include <PinConfig.cpp>
@@ -18,6 +18,15 @@ static const uint8_t FORCE_UPDATE_N_READS = 10;
 
 // MySensors configuration
 #include <MySConfig.cpp>
+
+// Sampling interval configuration
+#ifdef F_DEBUG
+static const uint32_t UPDATE_INTERVAL = 60000;
+#endif
+#ifndef F_DEBUG
+static const uint32_t UPDATE_INTERVAL = 900000;
+#endif
+static const uint8_t FORCE_UPDATE_N_READS = 10;
 
 // ************************ END OF CONFIG **********************************
 
@@ -176,9 +185,9 @@ float read_vcc(int reads = 5)
 // Wait before radio message (for CR2032 batteries)
 void cr2032_wait()
 {
-  if (BATTERY_TYPE == 2)
+  if (BATTERY_TYPE == 2 && !ext_power)
   {
-    wait(CR2032_RADIO_WAIT_TIME);
+    sleep(CR2032_RADIO_WAIT_TIME);
   }
 }
 
@@ -245,12 +254,6 @@ void update_front_pir()
   {
     last_front_pir = front_pir;
     nNoUpdatesFrontPir = 0;
-    send(msgFrontPir.set(front_pir ? 1 : 0), ack);
-    cr2032_wait();
-#ifdef F_DEBUG
-    Serial.print("Front PIR: ");
-    Serial.println(front_pir);
-#endif
 #ifdef ENABLE_MOTION_LED
     if (front_pir)
     {
@@ -282,6 +285,12 @@ void update_front_pir()
     Serial.println(motion_led_brighteness_status);
 #endif
 #endif
+    send(msgFrontPir.set(front_pir ? 1 : 0), ack);
+    cr2032_wait();
+#ifdef F_DEBUG
+    Serial.print("Front PIR: ");
+    Serial.println(front_pir);
+#endif
   }
   else
   {
@@ -298,7 +307,7 @@ void update_front_pir()
 void presentation()
 {
   // Send the sketch version information to the gateway and Controller
-  sendSketchInfo("BT-Pcb-328P-firmware", "1.0", ack);
+  sendSketchInfo(sketch_name, sketch_version, ack);
   cr2032_wait();
 // Register all sensors to gw (they will be created as child devices)
 #ifdef CHILD_ID_VCC_VOLTAGE
@@ -331,6 +340,7 @@ void presentation()
 #endif
 #ifdef ENABLE_SI7021
   metric = getControllerConfig().isMetric;
+  cr2032_wait();
 #endif
 }
 
@@ -662,7 +672,7 @@ void loop()
   digitalWrite(POWER_PIN, LOW);
 #endif
 
-  // Before sleeping turn of the PWR LED if battery il LOW
+  // Before sleeping turn of the PWR LED (low batery)
   if (!ext_power && pwr_led_brighteness_status != 0)
   {
     while (millis() < low_batt_led_on_start_time + LOW_BATTERY_BLINK_TIME)
@@ -680,11 +690,11 @@ void loop()
     first_run = false;
   }
 
+  // Check PIR status again before sleeping
 #ifdef CHILD_ID_FRONT_PIR
-  while (digitalRead(FRONT_PIR_PIN) == LOW)
-  {
-    continue;
-  }
+#ifdef CHILD_ID_LIGHT_LEVEL
+  update_light_level(PHOTORES_TOLERANCE, 10);
+#endif
   update_front_pir();
 #endif
 
@@ -693,7 +703,7 @@ void loop()
   Serial.println("Sleeping");
 #endif
 #ifdef CHILD_ID_FRONT_PIR
-  wake_up_mode = smartSleep(digitalPinToInterrupt(FRONT_PIR_PIN), FALLING, UPDATE_INTERVAL);
+  wake_up_mode = smartSleep(digitalPinToInterrupt(FRONT_PIR_PIN), CHANGE, UPDATE_INTERVAL);
 #endif
 #ifndef CHILD_ID_FRONT_PIR
   wake_up_mode = smartSleep(UPDATE_INTERVAL);

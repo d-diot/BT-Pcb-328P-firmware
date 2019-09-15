@@ -18,12 +18,12 @@ RX LED = A2
 */
 
 #define FRONT_PIR_PIN 3
-#define BOOSTER_PIN 4
 #define MOTION_LED_PIN 5
-#define PWR_LED_PIN 6
-#define POWER_PIN 8
 //#define MY_SIGNING_ATSHA204_PIN 17
 #define PHOTORES_PIN 21
 
 // Mandatory PIN
 #define EXT_PWR_SENSE_PIN 7
+#define BOOSTER_PIN 4
+#define PWR_LED_PIN 6
+#define POWER_PIN 8

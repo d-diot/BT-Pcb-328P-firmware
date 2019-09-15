@@ -1,12 +1,18 @@
 /* d-diot BT-Pcb-328P-firmware - MySensors Configuration */
 
-#define MY_BAUD_RATE (9600ul)
+// Security: uncomment the first line to enable signing. If a ATSHA204 PIN is defined in PinConfig.cpp this backend will be used, otherwise software signing
 
-//#define MY_SIGNING_SOFT
 //#define MY_SIGNING_REQUEST_SIGNATURES
+#ifdef MY_SIGNING_REQUEST_SIGNATURES
 #ifdef MY_SIGNING_ATSHA204_PIN
 #define MY_SIGNING_ATSHA204
 #endif
+#ifndef MY_SIGNING_ATSHA204_PIN
+#define MY_SIGNING_SOFT
+#endif
+#endif
+
+// Radio type definition: comment out the first line to configure a NRF24L01 radio module instead of RFM69
 
 #define MY_RADIO_RFM69
 #ifdef MY_RADIO_RFM69
@@ -15,17 +21,27 @@
 #define MY_RFM69_FREQUENCY RFM69_868MHZ
 #define MY_RFM69_RST_PIN 9
 #endif
-
 #ifndef MY_RADIO_RFM69
 #define MY_RADIO_RF24
 #define MY_RF24_PA_LEVEL RF24_PA_LOW
 #define MY_RF24_IRQ_PIN 2
 #endif
 
+// Set serial baud rate to 9600. Necessary for 1 Mhz MCU
+
+#define MY_BAUD_RATE (9600ul)
+
+// Enable signaling LEDs
+
 #define MY_DEFAULT_ERR_LED_PIN 14
 #define MY_DEFAULT_TX_LED_PIN 15
 #define MY_DEFAULT_RX_LED_PIN 16
+
 // Timeout before starting loop without gateway connection
-#define MY_TRANSPORT_WAIT_READY_MS 10000
+
+#define MY_TRANSPORT_WAIT_READY_MS 30000
 #define MY_SPLASH_SCREEN_DISABLED
+
+// Ack
+
 static const bool ack = false;
