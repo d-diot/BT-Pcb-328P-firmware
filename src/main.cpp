@@ -370,7 +370,7 @@ void setup()
   pinMode(PHOTORES_PIN, INPUT);
 #endif
 #ifdef FRONT_PIR_PIN
-  pinMode(FRONT_PIR_PIN, INPUT_PULLUP);
+  pinMode(FRONT_PIR_PIN, INPUT);
 #endif
 #ifdef MOTION_LED_PIN
   pinMode(MOTION_LED_PIN, OUTPUT);
@@ -692,9 +692,6 @@ void loop()
 
   // Check PIR status again before sleeping
 #ifdef CHILD_ID_FRONT_PIR
-#ifdef CHILD_ID_LIGHT_LEVEL
-  update_light_level(PHOTORES_TOLERANCE, 10);
-#endif
   update_front_pir();
 #endif
 
