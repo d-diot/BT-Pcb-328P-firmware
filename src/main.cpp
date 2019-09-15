@@ -451,7 +451,11 @@ void loop()
 
   // Read Pir value
 #ifdef CHILD_ID_FRONT_PIR
-  update_front_pir();
+  // Update the PIR only when the node is waked up by movement to avoid false positive after the wake-up triggered by timer
+  if (wake_up_mode == 1)
+  {
+    update_front_pir();
+  }
 #endif
 
   // Detect external power presence. Logic is reversed: HIGH = no external power, LOW = external_power
@@ -692,18 +696,29 @@ void loop()
 
   // Check PIR status again before sleeping
 #ifdef CHILD_ID_FRONT_PIR
-  update_front_pir();
+  // Update the PIR only when the node is waked up by movement to avoid false positive after the wake-up triggered by timer
+  if (wake_up_mode == 1)
+  {
+    update_front_pir();
+    // Paranoia: make sure to turn off the PIR led if no motion is detected
+    if (digitalRead(FRONT_PIR_PIN) && !front_pir)
+    {
+#ifdef ENABLE_MOTION_LED
+      motion_led_brighteness_status = 0;
+      analogWrite(MOTION_LED_PIN, motion_led_brighteness_status);
+#endif
+      front_pir = false;
+      last_front_pir = front_pir;
+      // send message without cr2032_wait to minimize the possibility of status changes before sleeping
+      send(msgFrontPir.set(front_pir ? 1 : 0), ack);
+    }
+  }
 #endif
 
   // Smartsleep
 #ifdef F_DEBUG
   Serial.println("Sleeping");
 #endif
-#ifdef CHILD_ID_FRONT_PIR
   wake_up_mode = smartSleep(digitalPinToInterrupt(FRONT_PIR_PIN), CHANGE, UPDATE_INTERVAL);
-#endif
-#ifndef CHILD_ID_FRONT_PIR
-  wake_up_mode = smartSleep(UPDATE_INTERVAL);
-#endif
 }
 // **************************** END OF LOOP *********************************

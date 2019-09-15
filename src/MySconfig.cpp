@@ -1,5 +1,9 @@
 /* d-diot BT-Pcb-328P-firmware - MySensors Configuration */
 
+// Node ID. Uncomment this line if you prefer to manually set an ID. Otherwise the controller will assign a number (1-254) automatically
+
+//#define MY_NODE_ID 1
+
 // Security: uncomment the first line to enable signing. If a ATSHA204 PIN is defined in PinConfig.cpp this backend will be used, otherwise software signing
 
 //#define MY_SIGNING_REQUEST_SIGNATURES
