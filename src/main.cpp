@@ -123,6 +123,7 @@ uint8_t nNoUpdatesLightLevel;
 #ifdef FRONT_PIR_PIN
 bool front_pir = false;
 bool last_front_pir = false;
+bool force_pir_check = false;
 uint8_t nNoUpdatesFrontPir = 0;
 #endif
 
@@ -452,7 +453,7 @@ void loop()
   // Read Pir value
 #ifdef CHILD_ID_FRONT_PIR
   // Update the PIR only when the node is waked up by movement to avoid false positive after the wake-up triggered by timer
-  if (wake_up_mode == 1)
+  if (wake_up_mode == 1 || force_pir_check)
   {
     update_front_pir();
   }
@@ -694,10 +695,10 @@ void loop()
     first_run = false;
   }
 
-  // Check PIR status again before sleeping
+  // Paranoia: check PIR status again before sleeping
 #ifdef CHILD_ID_FRONT_PIR
   // Update the PIR only when the node is waked up by movement to avoid false positive after the wake-up triggered by timer
-  if (wake_up_mode == 1)
+  if (wake_up_mode == 1 || force_pir_check)
   {
     update_front_pir();
     // Paranoia: make sure to turn off the PIR led if no motion is detected
@@ -719,6 +720,21 @@ void loop()
 #ifdef F_DEBUG
   Serial.println("Sleeping");
 #endif
-  wake_up_mode = smartSleep(digitalPinToInterrupt(FRONT_PIR_PIN), CHANGE, UPDATE_INTERVAL);
+#ifdef CHILD_ID_FRONT_PIR
+  // Paranoia: short the update interval to 15 sec. and force PIR check at wake up if the motion is detected
+  if (digitalRead(FRONT_PIR_PIN) == LOW || front_pir)
+  {
+    force_pir_check = true;
+    wake_up_mode = smartSleep(digitalPinToInterrupt(FRONT_PIR_PIN), CHANGE, 15000);
+  }
+  else
+  {
+    force_pir_check = false;
+    wake_up_mode = smartSleep(digitalPinToInterrupt(FRONT_PIR_PIN), CHANGE, UPDATE_INTERVAL);
+  }
+#endif
+#ifndef CHILD_ID_FRONT_PIR
+  wake_up_mode = smartSleep(digitalPinToInterrupt(3), CHANGE, UPDATE_INTERVAL);
+#endif
 }
 // **************************** END OF LOOP *********************************
