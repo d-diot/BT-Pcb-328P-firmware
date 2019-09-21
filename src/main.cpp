@@ -531,7 +531,7 @@ void loop()
       // Autodetect battery type
       if (AAA_BATT_CHEMISTRY == 0)
       {
-        if (initial_vcc_voltage > 2.5)
+        if (initial_vcc_voltage > NIMH_VMAX_THRESHOLD)
         {
           batt_percent_value = (uint8_t)round(vcc.Read_Perc(ALK_V_MIN, ALK_V_MAX));
         }
@@ -721,11 +721,11 @@ void loop()
   Serial.println("Sleeping");
 #endif
 #ifdef CHILD_ID_FRONT_PIR
-  // Paranoia: short the update interval to 15 sec. and force PIR check at wake up if the motion is detected
+  // Paranoia: short the update interval to PIR_FORCE_CHECK_INTERVAL and force PIR re-check at next wake up if the motion is detected
   if (digitalRead(FRONT_PIR_PIN) == LOW || front_pir)
   {
     force_pir_check = true;
-    wake_up_mode = smartSleep(digitalPinToInterrupt(FRONT_PIR_PIN), CHANGE, 15000);
+    wake_up_mode = smartSleep(digitalPinToInterrupt(FRONT_PIR_PIN), CHANGE, PIR_FORCE_CHECK_INTERVAL);
   }
   else
   {

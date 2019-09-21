@@ -12,6 +12,7 @@
 #define BATTERY_PERCENT_TOLERANCE 2
 // AAA batteries chemistry: 0 = Autodetect, 1 = Custom V min and V max, 2 = NiMH (rechargeable), 3 = Alkaline (disposable)
 #define AAA_BATT_CHEMISTRY 0
+const float NIMH_VMAX_THRESHOLD = 2.6;
 const float NIMH_V_MIN = 2.0;
 const float NIMH_V_MAX = 2.4;
 const float ALK_V_MIN = 2.0;
@@ -67,6 +68,7 @@ const float VccTol = 0.05;
 // Motion led
 
 #ifdef FRONT_PIR_PIN
+#define PIR_FORCE_CHECK_INTERVAL 10000
 #ifdef MOTION_LED_PIN
 #define ENABLE_MOTION_LED
 #ifdef ENABLE_MOTION_LED
