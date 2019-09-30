@@ -1,8 +1,12 @@
 /* d-diot BT-Pcb-328P-firmware - MySensors Configuration */
 
-// Node ID. Uncomment this line if you prefer to manually set an ID. Otherwise the controller will assign a number (1-254) automatically
+// Node ID. Uncomment the line below if you prefer to manually set an ID. Otherwise the controller will assign a number (1-254) automatically
 
 //#define MY_NODE_ID 1
+
+// Repeater mode. Uncomment the line below to activate the repeater mode. In this case the MCU will newer go to sleep, so is better to use an external power source (USB)
+
+//#define MY_REPEATER_FEATURE
 
 // Security: uncomment the first line to enable signing. If a ATSHA204 PIN is defined in PinConfig.cpp this backend will be used, otherwise software signing
 

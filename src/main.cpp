@@ -391,10 +391,40 @@ void setup()
 
 void loop()
 {
+  // To reduce radio traffic, disable forced updates after FORCE_UPDATE_N_READS when MY_REPEATER_FEATURE is active and MCU never goes to sleep
+#ifdef MY_REPEATER_FEATURE
+  if (wake_up_mode == -3)
+  {
+#ifdef CHILD_ID_FRONT_PIR
+    nNoUpdatesFrontPir = 0;
+#endif
+#ifdef BOOSTER_PIN
+    nNoUpdatesBooster = 0;
+#endif
+#ifdef EXT_PWR_SENSE_PIN
+    nNoUpdatesExtPwr = 0;
+#endif
+#ifdef CHILD_ID_LIGHT_LEVEL
+    nNoUpdatesLightLevel = 0;
+#endif
+    nNoUpdatesVccLevel = 0;
+#ifdef ENABLE_BATTERY_MONITOR
+    nNoUpdatesBattPercent = 0;
+#endif
+#ifdef ENABLE_SI7021
+    nNoUpdatesTemp = 0;
+    nNoUpdatesHum = 0;
+#endif
+  }
+#endif
+
 // Turn ON power PIN
 #ifdef POWER_PIN
-  digitalWrite(POWER_PIN, HIGH);
-  wait(POWER_PIN_WAIT_TIME);
+  if (first_run || wake_up_mode != -3)
+  {
+    digitalWrite(POWER_PIN, HIGH);
+    wait(POWER_PIN_WAIT_TIME);
+  }
 #endif
 
 #ifdef F_DEBUG
@@ -402,10 +432,13 @@ void loop()
   Serial.println(wake_up_mode);
 #endif
 
-// Send heartbeat
+// Send heartbeat only after sleep
 #ifdef ENABLE_HEARTBEAT
-  sendHeartbeat();
-  cr2032_wait();
+  if (wake_up_mode != -3)
+  {
+    sendHeartbeat();
+    cr2032_wait();
+  }
 #endif
 
   // Read Vcc
@@ -672,6 +705,14 @@ void loop()
   }
 #endif
 
+  // Set first run to false
+  if (first_run)
+  {
+    first_run = false;
+  }
+
+// Smartsleep only if MY_REPEATER_FEATURE is not enabled
+#ifndef MY_REPEATER_FEATURE
 // Turn OFF power pin before sleeping
 #ifdef POWER_PIN
   digitalWrite(POWER_PIN, LOW);
@@ -687,12 +728,6 @@ void loop()
     pwr_led_brighteness_status = 0;
     low_batt_led_on_start_time = 0;
     analogWrite(PWR_LED_PIN, pwr_led_brighteness_status);
-  }
-
-  // Set first run to false
-  if (first_run)
-  {
-    first_run = false;
   }
 
   // Paranoia: check PIR status again before sleeping
@@ -716,7 +751,6 @@ void loop()
   }
 #endif
 
-  // Smartsleep
 #ifdef F_DEBUG
   Serial.println("Sleeping");
 #endif
@@ -735,6 +769,12 @@ void loop()
 #endif
 #ifndef CHILD_ID_FRONT_PIR
   wake_up_mode = smartSleep(digitalPinToInterrupt(3), CHANGE, UPDATE_INTERVAL);
+#endif
+#endif
+
+// Set wake_up_mode to -3 if sleeping is disabled
+#ifdef MY_REPEATER_FEATURE
+  wake_up_mode = -3
 #endif
 }
 // **************************** END OF LOOP *********************************
