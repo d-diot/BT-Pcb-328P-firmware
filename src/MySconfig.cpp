@@ -27,7 +27,7 @@
 #define MY_RFM69_NEW_DRIVER
 #define MY_IS_RFM69HW
 #define MY_RFM69_FREQUENCY RFM69_868MHZ
-#define MY_RFM69_RST_PIN 9
+//#define MY_RFM69_RST_PIN 9
 #endif
 #ifndef MY_RADIO_RFM69
 #define MY_RADIO_RF24
