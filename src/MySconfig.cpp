@@ -39,11 +39,15 @@
 
 #define MY_BAUD_RATE (9600ul)
 
-// Enable signaling LEDs
+// Signaling LEDs. Comment out the three lines below if you don't have the radio signaling LEDs soldered on the board.
 
 #define MY_DEFAULT_ERR_LED_PIN 14
 #define MY_DEFAULT_TX_LED_PIN 15
 #define MY_DEFAULT_RX_LED_PIN 16
+// If you have soldered the radio signaling LEDs and you want to disable them uncomment the three lines below and comment out the three lines above.
+//#define DISABLE_ERR_LED 14
+//#define DISABLE_TX_LED 15
+//#define DISABLE_RX_LED 16
 
 // Timeout before starting loop without gateway connection
 

@@ -377,6 +377,15 @@ void setup()
   pinMode(MOTION_LED_PIN, OUTPUT);
   digitalWrite(MOTION_LED_PIN, LOW);
 #endif
+#ifdef DISABLE_ERR_LED
+  pinMode(DISABLE_ERR_LED, INPUT_PULLUP);
+#endif
+#ifdef DISABLE_TX_LED
+  pinMode(DISABLE_TX_LED, INPUT_PULLUP);
+#endif
+#ifdef DISABLE_RX_LED
+  pinMode(DISABLE_RX_LED, INPUT_PULLUP);
+#endif
 #ifdef AAA_BATT_CHEMISTRY
   if (AAA_BATT_CHEMISTRY == 0)
   {
