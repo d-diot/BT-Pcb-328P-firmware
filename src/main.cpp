@@ -494,8 +494,8 @@ void loop()
 
   // Read Pir value
 #ifdef CHILD_ID_FRONT_PIR
-  // Update the PIR only when the node is waked up by movement to avoid false positive after the wake-up triggered by timer
-  if (wake_up_mode == 1 || force_pir_check)
+  // Exclude the PIR update after the wake-up triggered by timer to avoid false positive
+  if (wake_up_mode == 1 || wake_up_mode == -3 || force_pir_check)
   {
     update_front_pir();
   }
@@ -720,6 +720,11 @@ void loop()
     first_run = false;
   }
 
+  // Set wake_up_mode to -3 if sleeping is disabled
+#ifdef MY_REPEATER_FEATURE
+  wake_up_mode = -3;
+#endif
+
 // Smartsleep only if MY_REPEATER_FEATURE is not enabled
 #ifndef MY_REPEATER_FEATURE
 // Turn OFF power pin before sleeping
@@ -779,11 +784,6 @@ void loop()
 #ifndef CHILD_ID_FRONT_PIR
   wake_up_mode = smartSleep(digitalPinToInterrupt(3), CHANGE, UPDATE_INTERVAL);
 #endif
-#endif
-
-// Set wake_up_mode to -3 if sleeping is disabled
-#ifdef MY_REPEATER_FEATURE
-  wake_up_mode = -3
 #endif
 }
 // **************************** END OF LOOP *********************************
