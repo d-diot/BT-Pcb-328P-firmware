@@ -28,7 +28,7 @@ const float CUSTOM_V_MAX = 3.3;
 
 #ifdef PWR_LED_PIN
 // Brightness level: 0 - 255. Auto = -1. Any number different from: -1, 0 - 255 = LED OFF
-const int LOW_BATTERY_LED_BRIGHTNESS = -1;
+const int LOW_BATTERY_LED_BRIGHTNESS = 255;
 // Battery percentage threshold to activate the LED
 #define LOW_BATTERY_THRESHOLD 25
 // Blink time (ms)
@@ -50,7 +50,7 @@ const float BoostThreshold = 2.7;
 #define ENABLE_EXT_PWR_MONITOR
 #ifdef PWR_LED_PIN
 // Brightness level: 0 - 255. Auto = -1. Any number different from: -1 or 0 - 255 = LED OFF
-const int EXT_POWER_LED_BRIGHTNESS = -1;
+const int EXT_POWER_LED_BRIGHTNESS = 255;
 #endif
 
 // Vcc read configuration
@@ -73,7 +73,7 @@ const float VccTol = 0.05;
 #define ENABLE_MOTION_LED
 #ifdef ENABLE_MOTION_LED
 // Brightness level: 0 - 255. Auto = -1. Any number different from: -1, 0 - 255 = LED OFF
-const int MOTION_LED_BRIGHTNESS = -1;
+const int MOTION_LED_BRIGHTNESS = 255;
 #endif
 #endif
 #endif
@@ -95,7 +95,7 @@ const float HumTol = 0.3;
 
 // LED minimum brightness in auto mode
 
-#define MIN_LED_BRIGHTNESS 10
+#define MIN_LED_BRIGHTNESS 50
 
 // Power pin parameters
 
