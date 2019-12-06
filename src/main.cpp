@@ -245,6 +245,60 @@ void update_light_level(int tol = 2, int reads = 10)
 }
 #endif
 
+// Motion LED update
+#ifdef ENABLE_MOTION_LED
+void update_motion_led()
+{
+  int target_brightness;
+  if (MOTION_LED_BRIGHTNESS >= 0 && MOTION_LED_BRIGHTNESS <= 255)
+  {
+    target_brightness = MOTION_LED_BRIGHTNESS;
+  }
+  else if (MOTION_LED_BRIGHTNESS == -1)
+  {
+#ifdef CHILD_ID_LIGHT_LEVEL
+    target_brightness = map(lastLightLevel, 0, 100, MIN_LED_BRIGHTNESS, 255);
+#endif
+#ifndef CHILD_ID_LIGHT_LEVEL
+    target_brightness = 255;
+#endif
+  }
+  else
+  {
+    target_brightness = 0;
+  }
+  if (last_front_pir)
+  {
+    motion_led_brighteness_status = target_brightness;
+  }
+  else
+  {
+    motion_led_brighteness_status = 0;
+  }
+#ifdef ENABLE_MOTION_LED_BLINK_MODE
+  analogWrite(MOTION_LED_PIN, motion_led_brighteness_status);
+#ifdef F_DEBUG
+  Serial.print("Motion LED brightness:");
+  Serial.println(motion_led_brighteness_status);
+#endif
+  wait(MOTION_LED_BLINK_TIME);
+  motion_led_brighteness_status = 0;
+  analogWrite(MOTION_LED_PIN, motion_led_brighteness_status);
+#ifdef F_DEBUG
+  Serial.print("Motion LED brightness:");
+  Serial.println(motion_led_brighteness_status);
+#endif
+#endif
+#ifndef ENABLE_MOTION_LED_BLINK_MODE
+  analogWrite(MOTION_LED_PIN, motion_led_brighteness_status);
+#ifdef F_DEBUG
+  Serial.print("Motion LED brightness:");
+  Serial.println(motion_led_brighteness_status);
+#endif
+#endif
+}
+#endif
+
 // Front PIR read and update
 #ifdef CHILD_ID_FRONT_PIR
 void update_front_pir()
@@ -255,37 +309,7 @@ void update_front_pir()
   {
     last_front_pir = front_pir;
     nNoUpdatesFrontPir = 0;
-#ifdef ENABLE_MOTION_LED
-    if (front_pir)
-    {
-      if (MOTION_LED_BRIGHTNESS >= 0 && MOTION_LED_BRIGHTNESS <= 255)
-      {
-        motion_led_brighteness_status = MOTION_LED_BRIGHTNESS;
-      }
-      else if (MOTION_LED_BRIGHTNESS == -1)
-      {
-#ifdef CHILD_ID_LIGHT_LEVEL
-        motion_led_brighteness_status = map(lastLightLevel, 0, 100, MIN_LED_BRIGHTNESS, 255);
-#endif
-#ifndef CHILD_ID_LIGHT_LEVEL
-        motion_led_brighteness_status = 255;
-#endif
-      }
-      else
-      {
-        motion_led_brighteness_status = 0;
-      }
-    }
-    else
-    {
-      motion_led_brighteness_status = 0;
-    }
-    analogWrite(MOTION_LED_PIN, motion_led_brighteness_status);
-#ifdef F_DEBUG
-    Serial.print("Motion LED brightness:");
-    Serial.println(motion_led_brighteness_status);
-#endif
-#endif
+    update_motion_led();
     send(msgFrontPir.set(front_pir ? 1 : 0), ack);
     cr2032_wait();
 #ifdef F_DEBUG
@@ -297,7 +321,6 @@ void update_front_pir()
   {
     nNoUpdatesFrontPir++;
   }
-  // Motion LED
 }
 #endif
 

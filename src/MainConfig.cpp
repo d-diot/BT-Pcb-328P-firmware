@@ -74,6 +74,12 @@ const float VccTol = 0.05;
 #ifdef ENABLE_MOTION_LED
 // Brightness level: 0 - 255. Auto = -1. Any number different from: -1, 0 - 255 = LED OFF
 const int MOTION_LED_BRIGHTNESS = 255;
+// Blink mode. Just a flash when motion is detected
+//#define ENABLE_MOTION_LED_BLINK_MODE
+#ifdef ENABLE_MOTION_LED_BLINK_MODE
+// Motion led blink time (ms) when in BLINK_MODE
+#define MOTION_LED_BLINK_TIME 250
+#endif
 #endif
 #endif
 #endif
