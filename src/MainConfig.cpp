@@ -28,7 +28,7 @@ const float CUSTOM_V_MAX = 3.3;
 
 #ifdef PWR_LED_PIN
 // Brightness level: 0 - 255. Auto = -1. Any number different from: -1, 0 - 255 = LED OFF
-const int LOW_BATTERY_LED_BRIGHTNESS = 255;
+const int LOW_BATTERY_LED_BRIGHTNESS = -1;
 // Battery percentage threshold to activate the LED
 #define LOW_BATTERY_THRESHOLD 25
 // Blink time (ms)
@@ -50,7 +50,7 @@ const float BoostThreshold = 2.7;
 #define ENABLE_EXT_PWR_MONITOR
 #ifdef PWR_LED_PIN
 // Brightness level: 0 - 255. Auto = -1. Any number different from: -1 or 0 - 255 = LED OFF
-const int EXT_POWER_LED_BRIGHTNESS = 255;
+const int EXT_POWER_LED_BRIGHTNESS = -1;
 #endif
 
 // Vcc read configuration
@@ -73,7 +73,7 @@ const float VccTol = 0.05;
 #define ENABLE_MOTION_LED
 #ifdef ENABLE_MOTION_LED
 // Brightness level: 0 - 255. Auto = -1. Any number different from: -1, 0 - 255 = LED OFF
-const int MOTION_LED_BRIGHTNESS = 255;
+const int MOTION_LED_BRIGHTNESS = -1;
 // Blink mode. Just a flash when motion is detected
 //#define ENABLE_MOTION_LED_BLINK_MODE
 #ifdef ENABLE_MOTION_LED_BLINK_MODE

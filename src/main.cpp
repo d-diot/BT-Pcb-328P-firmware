@@ -7,7 +7,7 @@
 // ******************************* NODE CONFIGURATION **********************************
 
 // Sketch name and version
-const char sketch_name[] = "BT-Pcb-328P-firmware";
+const char sketch_name[] = "multisensor1";
 const char sketch_version[] = "1.0";
 
 //  Pin configuration
@@ -455,7 +455,9 @@ void loop()
   if (first_run || wake_up_mode != -3)
   {
     digitalWrite(POWER_PIN, HIGH);
+    wdt_reset();
     wait(POWER_PIN_WAIT_TIME);
+    wdt_reset();
   }
 #endif
 
@@ -692,7 +694,9 @@ void loop()
 // Read temp and hum
 #ifdef ENABLE_SI7021
   sensor_status = sensor.begin();
+  wdt_reset();
   wait(SI7021_WAIT_TIME);
+  wdt_reset();
   if (sensor_status)
   {
     temperature = float(metric ? sensor.getCelsiusHundredths() : sensor.getFahrenheitHundredths()) / 100.0;
@@ -743,6 +747,18 @@ void loop()
     first_run = false;
   }
 
+  // Turn of the PWR LED (low batery)
+  if (!ext_power && pwr_led_brighteness_status != 0)
+  {
+    while (millis() < low_batt_led_on_start_time + LOW_BATTERY_BLINK_TIME)
+    {
+      continue;
+    }
+    pwr_led_brighteness_status = 0;
+    low_batt_led_on_start_time = 0;
+    analogWrite(PWR_LED_PIN, pwr_led_brighteness_status);
+  }
+
   // Set wake_up_mode to -3 if sleeping is disabled
 #ifdef MY_REPEATER_FEATURE
   wake_up_mode = -3;
@@ -755,20 +771,16 @@ void loop()
   digitalWrite(POWER_PIN, LOW);
 #endif
 
-  // Before sleeping turn of the PWR LED (low batery)
-  if (!ext_power && pwr_led_brighteness_status != 0)
+#ifdef CHILD_ID_FRONT_PIR
+  // Wait until PIR goes OFF (signal HIGH -> logic is reversed)
+  while (digitalRead(FRONT_PIR_PIN) == LOW)
   {
-    while (millis() < low_batt_led_on_start_time + LOW_BATTERY_BLINK_TIME)
-    {
-      continue;
-    }
-    pwr_led_brighteness_status = 0;
-    low_batt_led_on_start_time = 0;
-    analogWrite(PWR_LED_PIN, pwr_led_brighteness_status);
+    wdt_reset();
+    continue;
   }
+  update_front_pir();
 
   // Paranoia: check PIR status again before sleeping
-#ifdef CHILD_ID_FRONT_PIR
   // Update the PIR only when the node is waked up by movement to avoid false positive after the wake-up triggered by timer
   if (wake_up_mode == 1 || force_pir_check)
   {
