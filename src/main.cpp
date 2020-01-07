@@ -519,11 +519,7 @@ void loop()
 
   // Read Pir value
 #ifdef CHILD_ID_FRONT_PIR
-  // Exclude the PIR update after the wake-up triggered by timer to avoid false positive
-  if (wake_up_mode == 1 || wake_up_mode == -3 || force_pir_check)
-  {
-    update_front_pir();
-  }
+  update_front_pir();
 #endif
 
   // Detect external power presence. Logic is reversed: HIGH = no external power, LOW = external_power
