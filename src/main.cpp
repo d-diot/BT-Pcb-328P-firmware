@@ -775,24 +775,17 @@ void loop()
     continue;
   }
   update_front_pir();
-
-  // Paranoia: check PIR status again before sleeping
-  // Update the PIR only when the node is waked up by movement to avoid false positive after the wake-up triggered by timer
-  if (wake_up_mode == 1 || force_pir_check)
+  // Paranoia: read the PIR pin again and make sure to turn off the PIR led if no motion is detected
+  if (digitalRead(FRONT_PIR_PIN) && !front_pir)
   {
-    update_front_pir();
-    // Paranoia: make sure to turn off the PIR led if no motion is detected
-    if (digitalRead(FRONT_PIR_PIN) && !front_pir)
-    {
 #ifdef ENABLE_MOTION_LED
-      motion_led_brighteness_status = 0;
-      analogWrite(MOTION_LED_PIN, motion_led_brighteness_status);
+    motion_led_brighteness_status = 0;
+    analogWrite(MOTION_LED_PIN, motion_led_brighteness_status);
 #endif
-      front_pir = false;
-      last_front_pir = front_pir;
-      // send message without cr2032_wait to minimize the possibility of status changes before sleeping
-      send(msgFrontPir.set(front_pir ? 1 : 0), ack);
-    }
+    front_pir = false;
+    last_front_pir = front_pir;
+    // send message without cr2032_wait to minimize the possibility of status changes before sleeping
+    send(msgFrontPir.set(front_pir ? 1 : 0), ack);
   }
 #endif
 
