@@ -7,7 +7,7 @@
 // ******************************* NODE CONFIGURATION **********************************
 
 // Sketch name and version
-const char sketch_name[] = "multisensor1";
+const char sketch_name[] = "BT-Pcb-328P";
 const char sketch_version[] = "1.0";
 
 //  Pin configuration
@@ -24,7 +24,7 @@ const char sketch_version[] = "1.0";
 static const uint32_t UPDATE_INTERVAL = 60000;
 #endif
 #ifndef F_DEBUG
-static const uint32_t UPDATE_INTERVAL = 900000;
+static const uint32_t UPDATE_INTERVAL = 3600000;
 #endif
 static const uint8_t FORCE_UPDATE_N_READS = 10;
 
